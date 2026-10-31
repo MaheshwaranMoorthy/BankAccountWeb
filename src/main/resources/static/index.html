@@ -1,0 +1,299 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Account Management</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f4f8;
+            text-align: center;
+            padding: 50px;
+        }
+
+        .container {
+            background: white;
+            max-width: 400px;
+            margin: auto;
+            padding: 30px;
+            border-radius: 10px;
+        }
+
+        input, button {
+            padding: 12px;
+            margin: 10px;
+            width: 80%;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #result {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>Bank Account Management</h1>
+    <h3>Search Account</h3>
+
+    <input type="number" id="accountNumber"
+           placeholder="Enter Account Number">
+
+    <button onclick="searchAccount()">Search Account</button>
+
+    <div id="result"></div>
+    <h3>Deposit Money</h3>
+
+    <input type="number" id="depositAccountNumber"
+           placeholder="Enter Account Number">
+
+    <input type="number" id="depositAmount"
+           placeholder="Enter Deposit Amount">
+
+    <button onclick="depositMoney()">Deposit</button>
+
+    <div id="depositResult"></div>
+    <hr>
+    <h3>Create New Account</h3>
+
+    <input type="number" id="newAccountNumber"
+           placeholder="Enter Account Number">
+
+    <input type="text" id="newAccountHolder"
+           placeholder="Enter Account Holder Name">
+
+    <input type="number" id="initialBalance"
+           placeholder="Enter Initial Balance">
+
+    <button onclick="createAccount()">Create Account</button>
+
+    <div id="createResult"></div>
+
+    <h3>Withdraw Money</h3>
+
+    <input type="number" id="withdrawAccountNumber"
+           placeholder="Enter Account Number">
+
+    <input type="number" id="withdrawAmount"
+           placeholder="Enter Withdrawal Amount">
+
+    <button onclick="withdrawMoney()">Withdraw</button>
+
+    <div id="withdrawResult"></div>
+
+    <hr>
+
+    <h3>Transaction History</h3>
+
+    <input type="number" id="historyAccountNumber"
+           placeholder="Enter Account Number">
+
+    <button onclick="showTransactions()">View Transactions</button>
+
+    <div id="transactionResult"></div>
+</div>
+
+<script>
+    async function searchAccount() {
+        const accountNumber =
+            document.getElementById("accountNumber").value;
+
+        const result = document.getElementById("result");
+
+        if (!accountNumber) {
+            result.innerHTML = "Please enter an account number.";
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `/api/accounts/${accountNumber}`
+            );
+
+            if (!response.ok) {
+                throw new Error("Account not found");
+            }
+
+            const account = await response.json();
+
+            result.innerHTML = `
+                <h3>Account Details</h3>
+                <p>Account Number: ${account.accountNumber}</p>
+                <p>Account Holder: ${account.accountHolder}</p>
+                <p>Balance: ₹${account.balance}</p>
+            `;
+
+        } catch (error) {
+            result.innerHTML = "Account not found or server error.";
+        }
+    }
+
+
+    async function createAccount() {
+        const accountNumber =
+            document.getElementById("newAccountNumber").value;
+
+        const accountHolder =
+            document.getElementById("newAccountHolder").value;
+
+        const balance =
+            document.getElementById("initialBalance").value;
+
+        const result = document.getElementById("createResult");
+
+        if (!accountNumber || !accountHolder || !balance) {
+            result.innerHTML = "Please fill all fields.";
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/accounts", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    accountNumber: Number(accountNumber),
+                    accountHolder: accountHolder,
+                    balance: Number(balance)
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error("Account creation failed");
+            }
+
+            const message = await response.text();
+            result.innerHTML = message;
+
+        } catch (error) {
+            result.innerHTML = "Unable to create account.";
+        }
+    }
+
+    async function depositMoney() {
+        const accountNumber =
+            document.getElementById("depositAccountNumber").value;
+
+        const amount =
+            document.getElementById("depositAmount").value;
+
+        const result = document.getElementById("depositResult");
+
+        if (!accountNumber || !amount || Number(amount) <= 0) {
+            result.innerHTML = "Enter valid account number and amount.";
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `/api/accounts/${accountNumber}/deposit?amount=${amount}`,
+                { method: "POST" }
+            );
+
+            if (!response.ok) {
+                throw new Error("Deposit failed");
+            }
+
+            const message = await response.text();
+            result.innerHTML = message;
+
+        } catch (error) {
+            result.innerHTML = "Unable to deposit money.";
+        }
+    }
+
+    async function withdrawMoney() {
+        const accountNumber =
+            document.getElementById("withdrawAccountNumber").value;
+
+        const amount =
+            document.getElementById("withdrawAmount").value;
+
+        const result = document.getElementById("withdrawResult");
+
+        if (!accountNumber || !amount || Number(amount) <= 0) {
+            result.innerHTML = "Enter valid account number and amount.";
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `/api/accounts/${accountNumber}/withdraw?amount=${amount}`,
+                { method: "POST" }
+            );
+
+            if (!response.ok) {
+                throw new Error("Withdrawal failed");
+            }
+
+            const message = await response.text();
+            result.innerHTML = message;
+
+        } catch (error) {
+            result.innerHTML = "Unable to withdraw money.";
+        }
+    }
+
+    async function showTransactions() {
+        const accountNumber =
+            document.getElementById("historyAccountNumber").value;
+
+        const result =
+            document.getElementById("transactionResult");
+
+        if (!accountNumber) {
+            result.innerHTML = "Please enter an account number.";
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `/api/accounts/${accountNumber}/transactions`
+            );
+
+            if (!response.ok) {
+                throw new Error("Unable to fetch transactions");
+            }
+
+            const transactions = await response.json();
+
+            if (transactions.length === 0) {
+                result.innerHTML = "No transactions found.";
+                return;
+            }
+
+            let html = "<h3>Transaction Details</h3>";
+
+            transactions.forEach(transaction => {
+                html += `
+                <p>
+                    Type: ${transaction.transactionType}<br>
+                    Amount: ₹${transaction.amount}<br>
+                    Date: ${transaction.transactionDate}
+                </p>
+                <hr>
+            `;
+            });
+
+            result.innerHTML = html;
+
+        } catch (error) {
+            result.innerHTML = "Unable to load transaction history.";
+        }
+    }
+</script>
+
+</body>
+</html>
